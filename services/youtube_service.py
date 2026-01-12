@@ -1,7 +1,7 @@
 from pytubefix import YouTube
 import subprocess
 import os
-from utils.helpers import sanitize_filename
+from utils.helpers import sanitize_filename, extract_video_id
 
 class YouTubeService:
     @staticmethod
@@ -48,16 +48,17 @@ class YouTubeService:
             yt = YouTube(url)
             # Check if progressive stream exists
             progressive = yt.streams.filter(progressive=True, file_extension='mp4', resolution=resolution).first()
+            # Check adaptive
+            video = yt.streams.filter(adaptive=True, file_extension='mp4', resolution=resolution, only_video=True).first()
+            audio = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).first()
+            
+            types = []
             if progressive:
-                types = ['full']
-            else:
-                # Check adaptive
-                video = yt.streams.filter(adaptive=True, file_extension='mp4', resolution=resolution, only_video=True).first()
-                audio = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).first()
-                if video and audio:
-                    types = ['video', 'audio', 'full']
-                else:
-                    types = []
+                types.append('full')
+            if video and audio:
+                types.extend(['video', 'audio', 'full'])
+            # Remove duplicates
+            types = list(set(types))
             return {"types": types}, None
         except Exception as e:
             return None, str(e)
@@ -67,7 +68,7 @@ class YouTubeService:
         try:
             yt = YouTube(url)
             title = sanitize_filename(yt.title)
-            video_id = url.split('v=')[1].split('&')[0]
+            video_id = extract_video_id(url)
             out_dir = f"./downloads/{video_id}"
             os.makedirs(out_dir, exist_ok=True)
 

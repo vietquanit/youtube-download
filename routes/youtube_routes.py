@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, send_from_directory
 from services.youtube_service import YouTubeService
-from utils.helpers import is_valid_youtube_url
+from utils.helpers import is_valid_youtube_url, extract_video_id
 import os
 
 youtube_bp = Blueprint('youtube', __name__, url_prefix='/api/v1/youtube')
@@ -70,16 +70,24 @@ def download_by_resolution(resolution):
     if not is_valid_youtube_url(url):
         return jsonify({"error": "Invalid YouTube URL."}), 400
 
-    # Download all types for the resolution
+    # Get available types first
+    types_result, _ = YouTubeService.get_available_types(url, resolution)
+    if not types_result:
+        return jsonify({"error": "No available types for this resolution"}), 404
+    available_types = types_result.get('types', [])
+
+    # Download available types
     files = []
-    for type in ['full', 'video', 'audio']:
+    for type in available_types:
         file_path, filename = YouTubeService.download_and_prepare_file(url, resolution, type)
         if file_path:
             files.append(filename)
-        # Note: For 'full' in adaptive, it creates video and audio temp, but we keep them
+        else:
+            # Log or handle error
+            pass
 
     if files:
-        video_id = url.split('v=')[1].split('&')[0]
+        video_id = extract_video_id(url)
         return jsonify({"message": f"Video with resolution {resolution} downloaded successfully.", "files": files, "video_id": video_id}), 200
     else:
         return jsonify({"error": "Failed to download"}), 500
@@ -105,3 +113,4 @@ def download_and_send(resolution, type):
         return response
     else:
         return jsonify({"error": filename}), 404
+
