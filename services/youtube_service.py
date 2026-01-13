@@ -1,13 +1,13 @@
 from pytubefix import YouTube
 import subprocess
 import os
-from utils.helpers import sanitize_filename, extract_video_id
+from utils.helpers import sanitize_filename, extract_video_id, clean_youtube_url
 
 class YouTubeService:
     @staticmethod
     def get_video_info(url):
         try:
-            yt = YouTube(url)
+            yt = YouTube(clean_youtube_url(url))
             stream = yt.streams.first()
             video_info = {
                 "title": yt.title,
@@ -24,7 +24,8 @@ class YouTubeService:
     @staticmethod
     def get_available_resolutions(url):
         try:
-            yt = YouTube(url)
+            yt = YouTube(clean_youtube_url(url))
+            print(f"Getting streams for {clean_youtube_url(url)}")
             progressive_resolutions = list(set([
                 stream.resolution
                 for stream in yt.streams.filter(progressive=True, file_extension='mp4')
@@ -35,23 +36,25 @@ class YouTubeService:
                 for stream in yt.streams.filter(file_extension='mp4')
                 if stream.resolution
             ]))
+            print(f"Progressive: {progressive_resolutions}, All: {all_resolutions}")
             return {
                 "progressive": sorted(progressive_resolutions),
                 "all": sorted(all_resolutions)
             }, None
         except Exception as e:
+            print(f"Error in get_available_resolutions: {str(e)}")
             return None, str(e)
 
     @staticmethod
     def get_available_types(url, resolution):
         try:
-            yt = YouTube(url)
+            yt = YouTube(clean_youtube_url(url))
             # Check if progressive stream exists
             progressive = yt.streams.filter(progressive=True, file_extension='mp4', resolution=resolution).first()
             # Check adaptive
             video = yt.streams.filter(adaptive=True, file_extension='mp4', resolution=resolution, only_video=True).first()
             audio = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).first()
-            
+
             types = []
             if progressive:
                 types.append('full')
@@ -66,7 +69,7 @@ class YouTubeService:
     @staticmethod
     def download_and_prepare_file(url, resolution, type):
         try:
-            yt = YouTube(url)
+            yt = YouTube(clean_youtube_url(url))
             title = sanitize_filename(yt.title)
             video_id = extract_video_id(url)
             out_dir = f"./downloads/{video_id}"

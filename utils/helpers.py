@@ -14,3 +14,9 @@ def extract_video_id(url):
     elif 'shorts/' in url:
         return url.split('shorts/')[1].split('?')[0].split('&')[0]
     return None
+
+def clean_youtube_url(url):
+    video_id = extract_video_id(url)
+    if video_id:
+        return f"https://www.youtube.com/watch?v={video_id}"
+    return url
