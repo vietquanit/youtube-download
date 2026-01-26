@@ -42,7 +42,7 @@ BE/
      - Restart your terminal/VS Code.
    - Verify: Run `ffmpeg -version` in terminal.
 4. Run the app: `python main.py`
-
+   `uvicorn main:app --reload`
 ## API Endpoints
 
 All endpoints are prefixed with `/api/v1/youtube`.

@@ -7,6 +7,7 @@ class YouTubeService:
     @staticmethod
     def get_video_info(url):
         try:
+            # Sử dụng ANDROID client để tránh lỗi 'Please sign in'
             yt = YouTube(clean_youtube_url(url))
             stream = yt.streams.first()
             video_info = {
@@ -24,7 +25,8 @@ class YouTubeService:
     @staticmethod
     def get_available_resolutions(url):
         try:
-            yt = YouTube(clean_youtube_url(url))
+            # Thêm cấu hình để tránh bị YouTube chặn
+            yt = YouTube(clean_youtube_url(url),client='WEB_CREATOR')
             print(f"Getting streams for {clean_youtube_url(url)}")
             progressive_resolutions = list(set([
                 stream.resolution

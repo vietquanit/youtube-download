@@ -39,7 +39,8 @@ def available_resolutions():
     if resolutions:
         return jsonify(resolutions), 200
     else:
-        return jsonify({"error": error_message}), 500
+        # Nếu lỗi do video không tồn tại hoặc bị chặn, trả về 400 (Client Error) thay vì 500
+        return jsonify({"error": error_message}), 400
 
 @youtube_bp.route('/available_types/<resolution>', methods=['POST'])
 def available_types(resolution):
